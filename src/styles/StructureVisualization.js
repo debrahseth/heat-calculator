@@ -5,8 +5,7 @@ const StructureVisualization = ({
   layers,
   innerRadius,
   units,
-  hInside,
-  hOutside,
+  siLengthUnit,
 }) => {
   const canvasWidth = 600;
   const canvasHeight = 500;
@@ -16,6 +15,11 @@ const StructureVisualization = ({
       ? (0).toFixed(decimals)
       : Number(val).toFixed(decimals);
 
+  const unitLabel = units === "SI" ? siLengthUnit : "ft";
+
+  const rectColors = ["#a3bffa", "#6ee7b7", "#fbbf24", "#fbcfe8"];
+  const circleStrokes = ["#4f46e5", "#10b981", "#f59e0b", "#ef4444"];
+
   const drawStructure = () => {
     const shapeElements = [];
     const textElements = [];
@@ -24,10 +28,11 @@ const StructureVisualization = ({
       let currentX = 50;
       const maxThickness =
         layers.reduce((sum, l) => sum + Number(l.thickness || 0), 0) || 1;
-      const scale = (canvasWidth - 100) / maxThickness;
+      const scale = (canvasWidth - 150) / maxThickness; // leave space for legend
 
       layers.forEach((layer, i) => {
         const width = (Number(layer.thickness) || 0) * scale;
+
         shapeElements.push(
           <Rect
             key={`layer-${i}`}
@@ -35,25 +40,17 @@ const StructureVisualization = ({
             y={50}
             width={width}
             height={200}
-            fill={["#ccccff", "#ccffcc", "#ffccff", "#ffffcc"][i % 4]}
-            stroke="black"
-            strokeWidth={1}
+            fill={rectColors[i % rectColors.length]}
+            stroke="#333"
+            strokeWidth={2}
+            cornerRadius={8}
+            shadowColor="#000"
+            shadowBlur={6}
+            shadowOpacity={0.25}
+            shadowOffset={{ x: 2, y: 2 }}
           />
         );
-        textElements.push(
-          <Text
-            key={`layer-${i}-label`}
-            x={currentX + width / 2}
-            y={40}
-            text={`Layer ${i + 1} (${safeNumber(layer.thickness)} ${
-              units === "SI" ? "m" : "ft"
-            })`}
-            fontSize={14}
-            fontStyle="bold"
-            fill="#111"
-            align="center"
-          />
-        );
+
         currentX += width;
       });
     } else {
@@ -73,20 +70,18 @@ const StructureVisualization = ({
       let prevRadius =
         (innerRadius && !isNaN(innerRadius) ? innerRadius : 0) * scale;
 
-      // Label for inner radius
       textElements.push(
         <Text
           key="inner-radius-label"
           x={centerX}
           y={centerY}
-          text={`Inner R = ${safeNumber(innerRadius)} ${
-            units === "SI" ? "m" : "ft"
-          }`}
-          fontSize={14}
+          text={`Inner Pipe R = ${safeNumber(innerRadius)} ${unitLabel}`}
+          fontSize={18}
           fontStyle="bold"
-          fill="#111"
+          fill="#000"
           align="center"
-          padding={4}
+          verticalAlign="middle"
+          padding={6}
           background="#ffffffcc"
         />
       );
@@ -103,24 +98,11 @@ const StructureVisualization = ({
             y={centerY}
             radius={(scaledOuter + prevRadius) / 2}
             fill={null}
-            stroke={["#4f46e5", "#10b981", "#f59e0b", "#ef4444"][i % 4]}
+            stroke={circleStrokes[i % circleStrokes.length]}
             strokeWidth={thickness || 2}
-          />
-        );
-        textElements.push(
-          <Text
-            key={`layer-${i}-label`}
-            x={centerX}
-            y={centerY - scaledOuter - i}
-            text={`Layer ${i + 1} (R = ${safeNumber(outerRadius)} ${
-              units === "SI" ? "m" : "ft"
-            })`}
-            fontSize={14}
-            fontStyle="bold"
-            fill="#111"
-            align="center"
-            padding={4}
-            background="#ffffffcc"
+            shadowColor="#000"
+            shadowBlur={5}
+            shadowOpacity={0.2}
           />
         );
 
@@ -134,10 +116,52 @@ const StructureVisualization = ({
   const { shapeElements, textElements } = drawStructure();
 
   return (
-    <Stage width={canvasWidth} height={canvasHeight}>
-      <Layer>{shapeElements}</Layer>
-      <Layer>{textElements}</Layer>
-    </Stage>
+    <div style={{ display: "flex", gap: 20 }}>
+      {/* Canvas */}
+      <Stage
+        width={canvasWidth}
+        height={canvasHeight}
+        style={{
+          background: "#f0f4f8",
+          borderRadius: 10,
+          boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+        }}
+      >
+        <Layer>{shapeElements}</Layer>
+        <Layer>{textElements}</Layer>
+      </Stage>
+
+      {/* Legend */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <h3 style={{ margin: 0 }}>Legend</h3>
+        {layers.map((layer, i) => (
+          <div
+            key={`legend-${i}`}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontSize: 18,
+              fontWeight: "bold",
+            }}
+          >
+            <div
+              style={{
+                width: 24,
+                height: 24,
+                backgroundColor:
+                  config === "Composite Wall"
+                    ? rectColors[i % rectColors.length]
+                    : circleStrokes[i % circleStrokes.length],
+                border: "1px solid #333",
+                borderRadius: config === "Composite Wall" ? 4 : "50%",
+              }}
+            />
+            <span>{layer.name || `Layer ${i + 1}`}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 

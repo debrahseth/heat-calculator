@@ -1,9 +1,71 @@
 import { useState } from "react";
+import "katex/dist/katex.min.css";
+import { BlockMath } from "react-katex";
+import { Line, Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
 import dynamic from "next/dynamic";
 const StructureVisualization = dynamic(
   () => import("../styles/StructureVisualization"),
   { ssr: false }
 );
+
+function SortableItem({ id, children }) {
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <div className="flex items-center gap-2">
+        <div
+          {...listeners}
+          className="cursor-grab text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white"
+        >
+          ☰
+        </div>
+        <div className="flex-1">{children}</div>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const defaultState = {
@@ -13,7 +75,7 @@ export default function App() {
     area: 0,
     pipeLength: 0,
     innerRadius: 0.0,
-    layers: [{ thickness: 0, k: 0 }],
+    layers: [{ name: "Layer 1", thickness: 0, k: 0 }],
     hInside: 0,
     hOutside: 0,
     tHot: 0,
@@ -37,12 +99,83 @@ export default function App() {
   const [siLengthUnit, setSiLengthUnit] = useState("m");
   const [theme, setTheme] = useState("light");
 
+  const convertUnits = (newUnits) => {
+    if (newUnits === units) return;
+
+    const lengthFactor = units === "SI" ? 1 : 0.3048;
+
+    const newArea =
+      config === "Composite Wall"
+        ? units === "SI"
+          ? area / 0.092903
+          : area * 0.092903
+        : area;
+
+    const newPipeLength =
+      units === "SI" ? pipeLength / 0.3048 : pipeLength * 0.3048;
+    const newInnerRadius =
+      units === "SI" ? innerRadius / 0.3048 : innerRadius * 0.3048;
+
+    const newLayers = layers.map((layer) => {
+      if (config === "Composite Wall") {
+        const newThickness =
+          units === "SI" ? layer.thickness / 0.3048 : layer.thickness * 0.3048;
+        return { ...layer, thickness: newThickness };
+      } else {
+        const newOuterRadius =
+          units === "SI"
+            ? layer.outerRadius / 0.3048
+            : layer.outerRadius * 0.3048;
+        return { ...layer, outerRadius: newOuterRadius };
+      }
+    });
+
+    const newHInside = units === "SI" ? hInside / 5.6783 : hInside * 5.6783;
+    const newHOutside = units === "SI" ? hOutside / 5.6783 : hOutside * 5.6783;
+
+    const newTHot =
+      units === "SI" ? (tHot - 32) * (5 / 9) : tHot * (9 / 5) + 32;
+    const newTCold =
+      units === "SI" ? (tCold - 32) * (5 / 9) : tCold * (9 / 5) + 32;
+
+    setUnits(newUnits);
+    setArea(newArea);
+    setPipeLength(newPipeLength);
+    setInnerRadius(newInnerRadius);
+    setLayers(newLayers);
+    setHInside(newHInside);
+    setHOutside(newHOutside);
+    setTHot(newTHot);
+    setTCold(newTCold);
+  };
+
+  const convertTemperatureUnit = (newTempUnit) => {
+    if (newTempUnit === tempUnit) return;
+
+    let newTHot = tHot;
+    let newTCold = tCold;
+
+    if (newTempUnit === "K") {
+      newTHot = tHot + 273.15;
+      newTCold = tCold + 273.15;
+    } else {
+      newTHot = tHot - 273.15;
+      newTCold = tCold - 273.15;
+    }
+
+    setTempUnit(newTempUnit);
+    setTHot(newTHot);
+    setTCold(newTCold);
+  };
+
   const addLayer = () => {
+    const newLayerIndex = layers.length + 1;
     setLayers([
       ...layers,
       config === "Composite Wall"
-        ? { thickness: 0.1, k: 1 }
+        ? { name: `Layer ${newLayerIndex}`, thickness: 0.1, k: 1 }
         : {
+            name: `Layer ${newLayerIndex}`,
             outerRadius:
               layers[layers.length - 1]?.outerRadius * 1.2 || innerRadius * 1.2,
             k: 1,
@@ -52,7 +185,7 @@ export default function App() {
 
   const updateLayer = (index, field, value) => {
     const newLayers = [...layers];
-    newLayers[index][field] = parseFloat(value) || 0;
+    newLayers[index][field] = field === "name" ? value : parseFloat(value) || 0;
     setLayers(newLayers);
   };
 
@@ -85,10 +218,14 @@ export default function App() {
     let totalR = 0;
     const layerResistances = [];
     const interfaceTemps = [];
+    let criticalRadius = 0;
     let cumulativeR = 0;
 
     // Conversion factors
-    const lengthFactor = siLengthUnit === "mm" ? 0.001 : 1;
+    let lengthFactor;
+    if (siLengthUnit === "m") lengthFactor = 1;
+    else if (siLengthUnit === "cm") lengthFactor = 0.01;
+    else if (siLengthUnit === "mm") lengthFactor = 0.001;
     const areaCalc =
       config === "Composite Wall"
         ? units === "Imperial"
@@ -117,6 +254,15 @@ export default function App() {
     const kFactor = units === "Imperial" ? 1.7307 : 1;
     const hFactor = units === "Imperial" ? 5.6783 : 1;
     const tempDisplayFactor = units === "Imperial" ? 9 / 5 : 1;
+
+    if (config === "Pipe" && hOutside > 0 && layers.length > 0) {
+      const k = layers[layers.length - 1].k * kFactor;
+      const h = hOutside * hFactor;
+      criticalRadius = k / h;
+      if (units === "SI" && siLengthUnit === "mm") {
+        criticalRadius *= 1000;
+      }
+    }
 
     // Inside convection
     if (hInside > 0) {
@@ -152,13 +298,13 @@ export default function App() {
           (2 * Math.PI * kSI * pipeLengthSI);
       }
       totalR += rLayer;
-      layerResistances.push({ label: `Layer ${i + 1}`, r: rLayer });
+      layerResistances.push({ label: layer.name, r: rLayer });
     });
 
     layers.forEach((layer, i) => {
       cumulativeR += layerResistances[i + (hInside > 0 ? 1 : 0)].r;
       interfaceTemps.push({
-        label: `After Layer ${i + 1}`,
+        label: `After ${layer.name}`,
         temp: tHotSI - (tempDiff * cumulativeR) / totalR,
       });
     });
@@ -206,10 +352,45 @@ export default function App() {
       U: UDisplay,
       layerResistances,
       interfaceTemps: interfaceTempsDisplay,
+      criticalRadius,
     };
   };
 
-  const { totalR, Q, U, layerResistances, interfaceTemps } = calculate();
+  const { totalR, Q, U, layerResistances, interfaceTemps, criticalRadius } =
+    calculate();
+
+  const tempLabels = interfaceTemps.map((item) => item.label);
+  const tempData = interfaceTemps.map((item) => item.temp);
+
+  const tempChartData = {
+    labels: tempLabels,
+    datasets: [
+      {
+        label: "Temperature",
+        data: tempData,
+        fill: true,
+        backgroundColor: "rgba(99, 102, 241, 0.2)",
+        borderColor: "rgba(99, 102, 241, 1)",
+        tension: 0.4,
+      },
+    ],
+  };
+
+  const resistanceLabels = layerResistances.map((item) => item.label);
+  const resistanceData = layerResistances.map((item) => item.r);
+
+  const resistanceChartData = {
+    labels: resistanceLabels,
+    datasets: [
+      {
+        label: "Resistance",
+        data: resistanceData,
+        backgroundColor: "rgba(16, 185, 129, 0.6)",
+        borderColor: "rgba(5, 150, 105, 1)",
+        borderWidth: 1,
+      },
+    ],
+  };
 
   return (
     <div
@@ -255,7 +436,12 @@ export default function App() {
                     setConfig(e.target.value);
                     setLayers([{ thickness: 0.1, k: 1 }]);
                   }}
-                  className="w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+                  className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
+  ${
+    theme === "light"
+      ? "bg-white text-black border-gray-300"
+      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+  }`}
                 >
                   <option>Composite Wall</option>
                   <option>Pipe</option>
@@ -266,11 +452,16 @@ export default function App() {
                 <label className="block text-1xl font-bold mb-1">UNITS:</label>
                 <select
                   value={units}
-                  onChange={(e) => setUnits(e.target.value)}
-                  className="w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+                  onChange={(e) => convertUnits(e.target.value)}
+                  className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
+  ${
+    theme === "light"
+      ? "bg-white text-black border-gray-300"
+      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+  }`}
                 >
-                  <option>SI</option>
-                  <option>Imperial</option>
+                  <option value="SI">SI</option>
+                  <option value="Imperial">Imperial</option>
                 </select>
               </div>
 
@@ -281,15 +472,19 @@ export default function App() {
                   </label>
                   <select
                     value={tempUnit}
-                    onChange={(e) => setTempUnit(e.target.value)}
-                    className="w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+                    onChange={(e) => convertTemperatureUnit(e.target.value)}
+                    className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
+        ${
+          theme === "light"
+            ? "bg-white text-black border-gray-300"
+            : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        }`}
                   >
                     <option value="C">°C</option>
                     <option value="K">K</option>
                   </select>
                 </div>
               )}
-
               {config === "Composite Wall" ? (
                 <div>
                   <label className="block text-1xl font-bold mb-1">
@@ -300,7 +495,12 @@ export default function App() {
                     type="number"
                     value={area}
                     onChange={(e) => setArea(parseFloat(e.target.value) || 0)}
-                    className="w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+                    className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
+  ${
+    theme === "light"
+      ? "bg-white text-black border-gray-300"
+      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+  }`}
                     min="0"
                   />
                 </div>
@@ -316,7 +516,12 @@ export default function App() {
                       onChange={(e) =>
                         setPipeLength(parseFloat(e.target.value) || 0)
                       }
-                      className="w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+                      className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
+  ${
+    theme === "light"
+      ? "bg-white text-black border-gray-300"
+      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+  }`}
                       min="0"
                     />
                   </div>
@@ -330,7 +535,12 @@ export default function App() {
                       onChange={(e) =>
                         setInnerRadius(parseFloat(e.target.value) || 0)
                       }
-                      className="w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+                      className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
+  ${
+    theme === "light"
+      ? "bg-white text-black border-gray-300"
+      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+  }`}
                       min="0"
                     />
                   </div>
@@ -354,7 +564,12 @@ export default function App() {
                   type="number"
                   value={hInside}
                   onChange={(e) => setHInside(parseFloat(e.target.value) || 0)}
-                  className="w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+                  className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
+  ${
+    theme === "light"
+      ? "bg-white text-black border-gray-300"
+      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+  }`}
                 />
               </div>
               <div>
@@ -366,7 +581,12 @@ export default function App() {
                   type="number"
                   value={hOutside}
                   onChange={(e) => setHOutside(parseFloat(e.target.value) || 0)}
-                  className="w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+                  className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
+  ${
+    theme === "light"
+      ? "bg-white text-black border-gray-300"
+      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+  }`}
                 />
               </div>
               <div>
@@ -378,7 +598,12 @@ export default function App() {
                   type="number"
                   value={tHot}
                   onChange={(e) => setTHot(parseFloat(e.target.value) || 0)}
-                  className="w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+                  className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
+  ${
+    theme === "light"
+      ? "bg-white text-black border-gray-300"
+      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+  }`}
                 />
               </div>
               <div>
@@ -390,7 +615,12 @@ export default function App() {
                   type="number"
                   value={tCold}
                   onChange={(e) => setTCold(parseFloat(e.target.value) || 0)}
-                  className="w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
+                  className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
+  ${
+    theme === "light"
+      ? "bg-white text-black border-gray-300"
+      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+  }`}
                 />
               </div>
             </div>
@@ -406,67 +636,119 @@ export default function App() {
             </h2>
 
             {/* Map Layers */}
-            {layers.map((layer, i) => (
-              <div
-                key={i}
-                className="mb-5 p-5 rounded-xl border dark:border-gray-600 bg-gray-50/70 dark:bg-gray-700/70 shadow-md"
+            <DndContext
+              sensors={useSensors(useSensor(PointerSensor))}
+              collisionDetection={closestCenter}
+              onDragEnd={(event) => {
+                const { active, over } = event;
+                if (active.id !== over.id) {
+                  const oldIndex = layers.findIndex(
+                    (layer, i) => `layer-${i}` === active.id
+                  );
+                  const newIndex = layers.findIndex(
+                    (layer, i) => `layer-${i}` === over.id
+                  );
+                  setLayers(arrayMove(layers, oldIndex, newIndex));
+                }
+              }}
+            >
+              <SortableContext
+                items={layers.map((_, i) => `layer-${i}`)}
+                strategy={verticalListSortingStrategy}
               >
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-medium">Layer {i + 1}</h3>
-                  {layers.length > 1 && (
-                    <button
-                      onClick={() => removeLayer(i)}
-                      className="px-3 py-1 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-lg shadow hover:scale-102 transition"
-                    >
-                      REMOVE
-                    </button>
-                  )}
-                </div>
+                {layers.map((layer, i) => (
+                  <SortableItem key={i} id={`layer-${i}`}>
+                    <div className="mb-5 p-5 rounded-xl border dark:border-gray-600 bg-gray-50/70 dark:bg-gray-700/70 shadow-md">
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-lg font-medium">Layer {i + 1}</h3>
+                        {layers.length > 1 && (
+                          <button
+                            onClick={() => removeLayer(i)}
+                            className="px-3 py-1 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-lg shadow hover:scale-102 transition"
+                          >
+                            REMOVE
+                          </button>
+                        )}
+                      </div>
 
-                {/* Inputs per layer */}
-                <div className="grid gap-4">
-                  <div>
-                    <label className="block text-1xl font-bold mb-1">
-                      {config === "Composite Wall"
-                        ? "THICKNESS"
-                        : "OUTER RADIUS"}{" "}
-                      ({units === "SI" ? siLengthUnit : "ft"}):
-                    </label>
-                    <input
-                      type="number"
-                      value={
-                        config === "Composite Wall"
-                          ? layer.thickness
-                          : layer.outerRadius
-                      }
-                      onChange={(e) =>
-                        updateLayer(
-                          i,
-                          config === "Composite Wall"
-                            ? "thickness"
-                            : "outerRadius",
-                          e.target.value
-                        )
-                      }
-                      className="w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
-                    />
-                  </div>
+                      {/* Inputs per layer */}
+                      <div>
+                        <label className="block text-1xl font-bold mb-1">
+                          Layer Name:
+                        </label>
+                        <input
+                          type="text"
+                          value={layer.name}
+                          onChange={(e) =>
+                            updateLayer(i, "name", e.target.value)
+                          }
+                          className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
+${
+  theme === "light"
+    ? "bg-white text-black border-gray-300"
+    : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+}`}
+                        />
+                      </div>
 
-                  <div>
-                    <label className="block text-1xl font-bold mb-1">
-                      THERMAL CONDUCTIVITY - k (
-                      {units === "SI" ? `W/m·K` : "Btu/hr·ft·°F"}):
-                    </label>
-                    <input
-                      type="number"
-                      value={layer.k}
-                      onChange={(e) => updateLayer(i, "k", e.target.value)}
-                      className="w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
+                      <div>
+                        <div>
+                          <label className="block text-1xl font-bold mb-1">
+                            {config === "Composite Wall"
+                              ? "THICKNESS"
+                              : "OUTER RADIUS"}{" "}
+                            ({units === "SI" ? siLengthUnit : "ft"}):
+                          </label>
+                          <input
+                            type="number"
+                            value={
+                              config === "Composite Wall"
+                                ? layer.thickness
+                                : layer.outerRadius
+                            }
+                            onChange={(e) =>
+                              updateLayer(
+                                i,
+                                config === "Composite Wall"
+                                  ? "thickness"
+                                  : "outerRadius",
+                                e.target.value
+                              )
+                            }
+                            className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
+${
+  theme === "light"
+    ? "bg-white text-black border-gray-300"
+    : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+}`}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-1xl font-bold mb-1">
+                            THERMAL CONDUCTIVITY - k (
+                            {units === "SI" ? `W/m·K` : "Btu/hr·ft·°F"}):
+                          </label>
+                          <input
+                            type="number"
+                            value={layer.k}
+                            onChange={(e) =>
+                              updateLayer(i, "k", e.target.value)
+                            }
+                            className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
+${
+  theme === "light"
+    ? "bg-white text-black border-gray-300"
+    : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+}`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </SortableItem>
+                ))}
+              </SortableContext>
+            </DndContext>
 
             {/* Add / Reset buttons */}
             <div className="flex justify-center gap-4 mt-6">
@@ -498,8 +780,7 @@ export default function App() {
                 layers={layers}
                 innerRadius={innerRadius}
                 units={units}
-                hInside={hInside}
-                hOutside={hOutside}
+                siLengthUnit={siLengthUnit}
               />
             </div>
           </div>
@@ -514,8 +795,6 @@ export default function App() {
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {" "}
-              {/* Increased gap */}
               {[
                 {
                   label: "Total R",
@@ -532,6 +811,15 @@ export default function App() {
                   value: Q,
                   unit: units === "SI" ? "W" : "Btu/hr",
                 },
+                ...(config === "Pipe"
+                  ? [
+                      {
+                        label: "Critical Radius (Rcr)",
+                        value: criticalRadius,
+                        unit: units === "SI" ? siLengthUnit : "ft",
+                      },
+                    ]
+                  : []),
               ].map((item, idx) => (
                 <div
                   key={idx}
@@ -539,7 +827,7 @@ export default function App() {
                 >
                   <p className="font-semibold mb-2">{item.label}</p>
                   <p className="text-2xl font-bold">
-                    {safeValue(item.value)}{" "}
+                    {item.value !== null ? safeValue(item.value) : "N/A"}{" "}
                     <span className="text-lg font-normal">{item.unit}</span>
                   </p>
                 </div>
@@ -607,6 +895,267 @@ export default function App() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+
+        <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Temperature Profile */}
+          <div className="p-6 rounded-xl bg-white/70 dark:bg-gray-800/80 shadow-xl border border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl font-bold mb-4 text-indigo-600 dark:text-indigo-400 text-center">
+              🌡️ Temperature Profile
+            </h3>
+            <Line
+              data={tempChartData}
+              options={{
+                responsive: true,
+                plugins: { legend: { position: "top" } },
+                scales: {
+                  y: {
+                    title: {
+                      display: true,
+                      text: `Temperature (${
+                        units === "SI" ? (tempUnit === "C" ? "°C" : "K") : "°F"
+                      })`,
+                    },
+                  },
+                },
+              }}
+            />
+          </div>
+
+          {/* Layer Resistances */}
+          <div className="p-6 rounded-xl bg-white/70 dark:bg-gray-800/80 shadow-xl border border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl font-bold mb-4 text-indigo-600 dark:text-indigo-400 text-center">
+              🧱 Layer Resistances
+            </h3>
+            <Bar
+              data={resistanceChartData}
+              options={{
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                  y: {
+                    title: {
+                      display: true,
+                      text: `Resistance (${
+                        units === "SI" ? "m²·K/W" : "hr·ft²·°F/Btu"
+                      })`,
+                    },
+                  },
+                },
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Step-by-Step Solution */}
+        <div className="mt-10">
+          <div className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/80 p-6 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
+            <h2 className="text-3xl font-semibold mb-6 text-indigo-600 dark:text-indigo-400 text-center">
+              📝 Step-by-Step Solution
+            </h2>
+
+            <div className="space-y-6 max-h-[1000px] overflow-y-auto">
+              {/* 1️⃣ Total Thermal Resistance */}
+              <div className="p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg border-l-4 border-indigo-500">
+                <p className="font-semibold mb-2">
+                  1️⃣ Total Thermal Resistance:
+                </p>
+
+                {config === "Composite Wall" ? (
+                  <>
+                    <BlockMath math={`R_{inside} = \\frac{1}{h_{i} A}`} />
+                    <BlockMath math={`R_{outside} = \\frac{1}{h_{o} A}`} />
+                    {layers.map((layer, i) => (
+                      <BlockMath
+                        key={i}
+                        math={`R_{${layer.name}} = \\frac{${safeValue(
+                          layer.thickness
+                        )}}{${safeValue(layer.k)} \\cdot A}`}
+                      />
+                    ))}
+                    <BlockMath
+                      math={`R_{total} = R_{inside} + \\sum_{i=1}^{n} R_{layer_i} + R_{outside}`}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <BlockMath
+                      math={`R_{inside} = \\frac{1}{h_i 2 \\pi r_i L}`}
+                    />
+                    <BlockMath
+                      math={`R_{outside} = \\frac{1}{h_o 2 \\pi r_o L}`}
+                    />
+                    {layers.map((layer, i) => (
+                      <BlockMath
+                        key={i}
+                        math={`R_{${layer.name}} = \\frac{\\ln(${safeValue(
+                          layer.outerRadius
+                        )}/${safeValue(
+                          i === 0 ? innerRadius : layers[i - 1].outerRadius
+                        )})}{2 \\pi ${safeValue(layer.k)} L}`}
+                      />
+                    ))}
+                    <BlockMath
+                      math={`R_{total} = R_{inside} + \\sum_{i=1}^{n} R_{layer_i} + R_{outside}`}
+                    />
+                  </>
+                )}
+
+                <p className="mt-2 font-medium">
+                  Calculated:{" "}
+                  <span className="text-indigo-700 dark:text-indigo-300">
+                    {safeValue(totalR)}{" "}
+                    {config === "Composite Wall"
+                      ? units === "SI"
+                        ? "m²·K/W"
+                        : "hr·ft²·°F/Btu"
+                      : units === "SI"
+                      ? "K/W"
+                      : "°F·hr/Btu"}
+                  </span>
+                </p>
+
+                {/* Layer breakdown table */}
+                {layers.length > 0 && (
+                  <div className="mt-4 overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-indigo-100 dark:bg-gray-600">
+                          <th className="px-2 py-1 border">Layer</th>
+                          <th className="px-2 py-1 border">R (Calculated)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {layers.map((layer, i) => (
+                          <tr
+                            key={i}
+                            className={`border ${
+                              i % 2 === 0
+                                ? "bg-indigo-50 dark:bg-gray-700/70"
+                                : ""
+                            }`}
+                          >
+                            <td className="px-2 py-1 border">{layer.name}</td>
+                            <td className="px-2 py-1 border">
+                              {config === "Composite Wall"
+                                ? safeValue(layer.thickness / (layer.k * area))
+                                : safeValue(
+                                    Math.log(
+                                      layer.outerRadius /
+                                        (i === 0
+                                          ? innerRadius
+                                          : layers[i - 1].outerRadius)
+                                    ) /
+                                      (2 * Math.PI * layer.k * pipeLength)
+                                  )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* 2️⃣ Heat Transfer Rate */}
+              <div className="p-4 bg-green-50 dark:bg-gray-700 rounded-lg border-l-4 border-green-500">
+                <p className="font-semibold mb-2">2️⃣ Heat Transfer Rate:</p>
+                <BlockMath
+                  math={
+                    config === "Composite Wall"
+                      ? `Q = \\frac{T_{hot} - T_{cold}}{R_{total}} = \\frac{${safeValue(
+                          tHot - tCold
+                        )}}{${safeValue(totalR)}}`
+                      : `Q = \\frac{T_{inside} - T_{outside}}{R_{total}} = \\frac{${safeValue(
+                          tHot - tCold
+                        )}}{${safeValue(totalR)}}`
+                  }
+                />
+                <p className="mt-2 font-medium">
+                  Calculated:{" "}
+                  <span className="text-green-700 dark:text-green-300">
+                    {safeValue(Q)} {units === "SI" ? "W" : "Btu/hr"}
+                  </span>
+                </p>
+              </div>
+
+              {/* 3️⃣ Critical Radius (Pipe only) */}
+              {config === "Pipe" && (
+                <div className="p-4 bg-yellow-50 dark:bg-gray-700 rounded-lg border-l-4 border-yellow-500">
+                  <p className="font-semibold mb-2">
+                    3️⃣ Critical Radius of Insulation:
+                  </p>
+                  <BlockMath
+                    math={`R_{cr} = \\frac{k}{h_o} = \\frac{${safeValue(
+                      layers[layers.length - 1]?.k
+                    )}}{${safeValue(hOutside)}}`}
+                  />
+                  <p className="mt-2 font-medium">
+                    Calculated:{" "}
+                    <span className="text-yellow-700 dark:text-yellow-300">
+                      {safeValue(criticalRadius)}{" "}
+                      {units === "SI" ? siLengthUnit : "ft"}
+                    </span>
+                  </p>
+                </div>
+              )}
+
+              {/* 4️⃣ Overall Heat Transfer Coefficient */}
+              <div className="p-4 bg-yellow-50 dark:bg-gray-700 rounded-lg border-l-4 border-yellow-500">
+                <p className="font-semibold mb-2">
+                  4️⃣ Overall Heat Transfer Coefficient:
+                </p>
+                <BlockMath math={`U = \\frac{1}{R_{total} \\cdot A}`} />
+                <p className="mt-2 font-medium">
+                  Calculated:{" "}
+                  <span className="text-yellow-700 dark:text-yellow-300">
+                    {safeValue(U)} {units === "SI" ? "W/m²·K" : "Btu/hr·ft²·°F"}
+                  </span>
+                </p>
+              </div>
+
+              {/* 5️⃣ Interface Temperatures */}
+              <div className="p-4 bg-pink-50 dark:bg-gray-700 rounded-lg border-l-4 border-pink-500">
+                <p className="font-semibold mb-4">5️⃣ Interface Temperatures:</p>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-pink-100 dark:bg-gray-600">
+                        <th className="px-2 py-1 border">Interface</th>
+                        <th className="px-2 py-1 border">Temperature</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {interfaceTemps.map((item, i) => {
+                        const unit =
+                          units === "SI"
+                            ? tempUnit === "C"
+                              ? "°C"
+                              : "K"
+                            : "°F";
+                        return (
+                          <tr
+                            key={i}
+                            className={`${
+                              i % 2 === 0
+                                ? "bg-pink-50 dark:bg-gray-700/70"
+                                : ""
+                            }`}
+                          >
+                            <td className="px-2 py-1 border">{item.label}</td>
+                            <td className="px-2 py-1 border">
+                              {safeValue(item.temp)} {unit}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -740,6 +1289,7 @@ export default function App() {
                     >
                       <option value="m">Meters (m)</option>
                       <option value="mm">Millimeters (mm)</option>
+                      <option value="cm">Centimeters (cm)</option>
                     </select>
                   </div>
                 )}
