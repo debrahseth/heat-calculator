@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Link from "next/link";
 import "katex/dist/katex.min.css";
 import { BlockMath } from "react-katex";
 import { Line, Bar } from "react-chartjs-2";
@@ -67,7 +68,7 @@ function SortableItem({ id, children }) {
   );
 }
 
-export default function App() {
+export default function ConductionCalculator() {
   const defaultState = {
     config: "Composite Wall",
     units: "SI",
@@ -98,12 +99,10 @@ export default function App() {
   const [decimalPlaces, setDecimalPlaces] = useState(4);
   const [siLengthUnit, setSiLengthUnit] = useState("m");
   const [theme, setTheme] = useState("light");
+  const [expMode, setExpMode] = useState(false);
 
   const convertUnits = (newUnits) => {
     if (newUnits === units) return;
-
-    const lengthFactor = units === "SI" ? 1 : 0.3048;
-
     const newArea =
       config === "Composite Wall"
         ? units === "SI"
@@ -213,6 +212,16 @@ export default function App() {
     !isFinite(val) || isNaN(val)
       ? (0).toFixed(decimals)
       : val.toFixed(decimals);
+
+  const safeValueResistance = (val, decimals = decimalPlaces) => {
+    if (!isFinite(val) || isNaN(val)) {
+      return (0).toFixed(decimals);
+    }
+
+    return expMode
+      ? Number(val).toExponential(decimals)
+      : Number(val).toFixed(decimals);
+  };
 
   const calculate = () => {
     let totalR = 0;
@@ -405,16 +414,27 @@ export default function App() {
           ⚡ Heat Transfer Calculator
         </h1>
 
-        <div className="flex justify-center gap-4 mb-10 w-full">
+        <div className="flex flex-col sm:flex-row justify-center gap-6 mb-10 w-full">
+          {/* Settings */}
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="flex-1 px-5 py-3 rounded-lg bg-gradient-to-r from-indigo-500 to-indigo-700 text-white text-[30px] shadow-lg hover:scale-102 transition flex items-center justify-center gap-2"
+            className="flex-1 px-6 py-4 rounded-lg bg-gradient-to-r from-indigo-500 to-indigo-700 text-white text-xl font-semibold shadow-lg hover:scale-105 hover:shadow-xl transition flex items-center justify-center gap-2"
           >
             ⚙️ Settings
           </button>
+
+          {/* Heat Exchanger */}
+          <Link
+            href="/heat-exchanger"
+            className="flex-1 px-6 py-4 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 text-white text-xl font-semibold shadow-lg hover:scale-105 hover:shadow-xl transition flex items-center justify-center gap-2"
+          >
+            🚀 Heat Exchanger
+          </Link>
+
+          {/* Manual */}
           <button
             onClick={() => setIsManualOpen(true)}
-            className="flex-1 px-5 py-3 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white text-[30px] shadow-lg hover:scale-102 transition flex items-center justify-center gap-2"
+            className="flex-1 px-6 py-4 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xl font-semibold shadow-lg hover:scale-105 hover:shadow-xl transition flex items-center justify-center gap-2"
           >
             📖 Manual
           </button>
@@ -835,14 +855,24 @@ ${
             </div>
 
             {/* Individual Resistances */}
+            {/* Individual Resistances */}
             {layerResistances.length > 0 && (
               <div className="mt-10">
-                <h3 className="text-xl font-bold mb-6 text-center bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-transparent bg-clip-text">
-                  ⚡ Individual Resistances
-                </h3>
+                {/* Header with toggle button */}
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-[30px] font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-transparent bg-clip-text">
+                    ⚡ Individual Resistances
+                  </h3>
+                  <button
+                    onClick={() => setExpMode(!expMode)}
+                    className="px-4 py-2 rounded-lg text-lg font-medium bg-indigo-500 text-white hover:bg-indigo-600 transition"
+                  >
+                    {expMode ? "Show Decimals" : "Show Exponential"}
+                  </button>
+                </div>
+
+                {/* Resistances Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {" "}
-                  {/* Added lg breakpoint */}
                   {layerResistances.map((item, i) => (
                     <div
                       key={i}
@@ -852,7 +882,7 @@ ${
                         {item.label}
                       </p>
                       <p className="text-[20px] font-semibold text-gray-900 dark:text-white">
-                        {safeValue(item.r)}{" "}
+                        {safeValueResistance(item.r)}{" "}
                         <span className="text-lg font-normal text-gray-500 dark:text-gray-400">
                           {units === "SI" ? `m²·K/W` : "hr·ft²·°F/Btu"}
                         </span>
@@ -866,7 +896,7 @@ ${
             {/* Interface Temperatures */}
             {interfaceTemps.length > 0 && (
               <div className="mt-10">
-                <h3 className="text-xl font-bold mb-6 text-center bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-transparent bg-clip-text">
+                <h3 className="text-[30px] font-bold mb-6 text-center bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-transparent bg-clip-text">
                   🌡️ Interface Temperatures
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
