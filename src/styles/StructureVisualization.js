@@ -1,3 +1,4 @@
+import { useRef, useEffect, useState } from "react";
 import { Stage, Layer, Rect, Circle, Text } from "react-konva";
 
 const StructureVisualization = ({
@@ -7,8 +8,24 @@ const StructureVisualization = ({
   units,
   siLengthUnit,
 }) => {
-  const canvasWidth = 600;
-  const canvasHeight = 500;
+  const containerRef = useRef(null);
+  const [dimensions, setDimensions] = useState({ width: 600, height: 500 });
+  const [containerWidth, setContainerWidth] = useState(600);
+
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        const width = containerRef.current.offsetWidth;
+        const height = Math.min(width * 0.8, 500);
+        setDimensions({ width, height });
+        setContainerWidth(width);
+      }
+    };
+
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, []);
 
   const safeNumber = (val, decimals = 2) =>
     !isFinite(val) || val == null
@@ -23,12 +40,16 @@ const StructureVisualization = ({
   const drawStructure = () => {
     const shapeElements = [];
     const textElements = [];
+    const { width: canvasWidth, height: canvasHeight } = dimensions;
 
     if (config === "Composite Wall") {
-      let currentX = 50;
       const maxThickness =
         layers.reduce((sum, l) => sum + Number(l.thickness || 0), 0) || 1;
-      const scale = (canvasWidth - 150) / maxThickness; // leave space for legend
+      const scale = (canvasWidth * 0.5) / maxThickness;
+
+      let currentX = (canvasWidth - maxThickness * scale) / 3;
+      const wallHeight = canvasHeight * 0.7;
+      const wallY = (canvasHeight - wallHeight) / 2;
 
       layers.forEach((layer, i) => {
         const width = (Number(layer.thickness) || 0) * scale;
@@ -37,9 +58,9 @@ const StructureVisualization = ({
           <Rect
             key={`layer-${i}`}
             x={currentX}
-            y={50}
+            y={wallY}
             width={width}
-            height={200}
+            height={wallHeight}
             fill={rectColors[i % rectColors.length]}
             stroke="#333"
             strokeWidth={2}
@@ -76,13 +97,14 @@ const StructureVisualization = ({
           x={centerX}
           y={centerY}
           text={`Inner Pipe R = ${safeNumber(innerRadius)} ${unitLabel}`}
-          fontSize={18}
+          fontSize={Math.max(canvasWidth / 40, 14)}
           fontStyle="bold"
           fill="#000"
           align="center"
           verticalAlign="middle"
           padding={6}
           background="#ffffffcc"
+          offsetX={100}
         />
       );
 
@@ -116,11 +138,20 @@ const StructureVisualization = ({
   const { shapeElements, textElements } = drawStructure();
 
   return (
-    <div style={{ display: "flex", gap: 20 }}>
-      {/* Canvas */}
+    <div
+      ref={containerRef}
+      style={{
+        display: "flex",
+        flexDirection: containerWidth > 400 ? "row" : "column",
+        gap: 20,
+        width: "100%",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       <Stage
-        width={canvasWidth}
-        height={canvasHeight}
+        width={containerWidth > 400 ? containerWidth - 120 : containerWidth}
+        height={dimensions.height}
         style={{
           background: "#f0f4f8",
           borderRadius: 10,
@@ -131,9 +162,26 @@ const StructureVisualization = ({
         <Layer>{textElements}</Layer>
       </Stage>
 
-      {/* Legend */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <h3 style={{ margin: 0 }}>Legend</h3>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+          width: containerWidth > 400 ? "300px" : "100%",
+          alignItems: containerWidth > 400 ? "flex-start" : "center",
+        }}
+      >
+        <h3
+          style={{
+            margin: 0,
+            textAlign: containerWidth > 400 ? "left" : "center",
+            width: "100%",
+            fontSize: "1.25rem",
+            fontWeight: "bold",
+          }}
+        >
+          Legend
+        </h3>
         {layers.map((layer, i) => (
           <div
             key={`legend-${i}`}
@@ -141,8 +189,10 @@ const StructureVisualization = ({
               display: "flex",
               alignItems: "center",
               gap: 8,
-              fontSize: 18,
+              fontSize: Math.max(dimensions.width / 40, 14),
               fontWeight: "bold",
+              justifyContent: containerWidth > 400 ? "flex-start" : "center",
+              width: "100%",
             }}
           >
             <div

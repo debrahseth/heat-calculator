@@ -73,8 +73,8 @@ export default function ConductionCalculator() {
     config: "Composite Wall",
     units: "SI",
     tempUnit: "C",
-    area: 0,
-    pipeLength: 0,
+    area: 1,
+    pipeLength: 1,
     innerRadius: 0.0,
     layers: [{ name: "Layer 1", thickness: 0, k: 0 }],
     hInside: 0,
@@ -403,27 +403,24 @@ export default function ConductionCalculator() {
 
   return (
     <div
-      className={`min-h-screen p-8 ${
+      className={`min-h-screen ${
         theme === "dark"
           ? "bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white"
           : "bg-gradient-to-br from-gray-100 via-white to-gray-200 text-gray-900"
       } transition-colors duration-500`}
     >
-      <div className="container mx-auto max-w-8xl">
-        <h1 className="text-7xl font-extrabold mb-10 text-center bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-transparent bg-clip-text drop-shadow-lg">
-          ⚡ Heat Transfer Calculator
+      <div className="container max-w-8xl mx-auto px-1">
+        <h1 className="text-5xl md:text-7xl tracking-tight font-extrabold mb-10 text-center bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500  text-transparent bg-clip-text drop-shadow-lg">
+          ⚡Heat Transfer Calculator
         </h1>
 
         <div className="flex flex-col sm:flex-row justify-center gap-6 mb-10 w-full">
-          {/* Settings */}
           <button
             onClick={() => setIsSettingsOpen(true)}
             className="flex-1 px-6 py-4 rounded-lg bg-gradient-to-r from-indigo-500 to-indigo-700 text-white text-xl font-semibold shadow-lg hover:scale-105 hover:shadow-xl transition flex items-center justify-center gap-2"
           >
             ⚙️ Settings
           </button>
-
-          {/* Heat Exchanger */}
           <Link
             href="/heat-exchanger"
             className="flex-1 px-6 py-4 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 text-white text-xl font-semibold shadow-lg hover:scale-105 hover:shadow-xl transition flex items-center justify-center gap-2"
@@ -456,12 +453,11 @@ export default function ConductionCalculator() {
                     setConfig(e.target.value);
                     setLayers([{ thickness: 0.1, k: 1 }]);
                   }}
-                  className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
-  ${
-    theme === "light"
-      ? "bg-white text-black border-gray-300"
-      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-  }`}
+                  className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 ${
+                    theme === "light"
+                      ? "bg-white text-black border-gray-300"
+                      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  }`}
                 >
                   <option>Composite Wall</option>
                   <option>Pipe</option>
@@ -473,12 +469,11 @@ export default function ConductionCalculator() {
                 <select
                   value={units}
                   onChange={(e) => convertUnits(e.target.value)}
-                  className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
-  ${
-    theme === "light"
-      ? "bg-white text-black border-gray-300"
-      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-  }`}
+                  className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 ${
+                    theme === "light"
+                      ? "bg-white text-black border-gray-300"
+                      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  }`}
                 >
                   <option value="SI">SI</option>
                   <option value="Imperial">Imperial</option>
@@ -493,12 +488,11 @@ export default function ConductionCalculator() {
                   <select
                     value={tempUnit}
                     onChange={(e) => convertTemperatureUnit(e.target.value)}
-                    className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
-        ${
-          theme === "light"
-            ? "bg-white text-black border-gray-300"
-            : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-        }`}
+                    className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 ${
+                      theme === "light"
+                        ? "bg-white text-black border-gray-300"
+                        : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    }`}
                   >
                     <option value="C">°C</option>
                     <option value="K">K</option>
@@ -515,12 +509,11 @@ export default function ConductionCalculator() {
                     type="number"
                     value={area}
                     onChange={(e) => setArea(parseFloat(e.target.value) || 0)}
-                    className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
-  ${
-    theme === "light"
-      ? "bg-white text-black border-gray-300"
-      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-  }`}
+                    className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 ${
+                      theme === "light"
+                        ? "bg-white text-black border-gray-300"
+                        : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    }`}
                     min="0"
                   />
                 </div>
@@ -536,12 +529,11 @@ export default function ConductionCalculator() {
                       onChange={(e) =>
                         setPipeLength(parseFloat(e.target.value) || 0)
                       }
-                      className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
-  ${
-    theme === "light"
-      ? "bg-white text-black border-gray-300"
-      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-  }`}
+                      className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 ${
+                        theme === "light"
+                          ? "bg-white text-black border-gray-300"
+                          : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      }`}
                       min="0"
                     />
                   </div>
@@ -555,12 +547,11 @@ export default function ConductionCalculator() {
                       onChange={(e) =>
                         setInnerRadius(parseFloat(e.target.value) || 0)
                       }
-                      className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
-  ${
-    theme === "light"
-      ? "bg-white text-black border-gray-300"
-      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-  }`}
+                      className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 ${
+                        theme === "light"
+                          ? "bg-white text-black border-gray-300"
+                          : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      }`}
                       min="0"
                     />
                   </div>
@@ -584,12 +575,11 @@ export default function ConductionCalculator() {
                   type="number"
                   value={hInside}
                   onChange={(e) => setHInside(parseFloat(e.target.value) || 0)}
-                  className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
-  ${
-    theme === "light"
-      ? "bg-white text-black border-gray-300"
-      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-  }`}
+                  className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 ${
+                    theme === "light"
+                      ? "bg-white text-black border-gray-300"
+                      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  }`}
                 />
               </div>
               <div>
@@ -601,12 +591,11 @@ export default function ConductionCalculator() {
                   type="number"
                   value={hOutside}
                   onChange={(e) => setHOutside(parseFloat(e.target.value) || 0)}
-                  className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
-  ${
-    theme === "light"
-      ? "bg-white text-black border-gray-300"
-      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-  }`}
+                  className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 ${
+                    theme === "light"
+                      ? "bg-white text-black border-gray-300"
+                      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  }`}
                 />
               </div>
               <div>
@@ -618,12 +607,11 @@ export default function ConductionCalculator() {
                   type="number"
                   value={tHot}
                   onChange={(e) => setTHot(parseFloat(e.target.value) || 0)}
-                  className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
-  ${
-    theme === "light"
-      ? "bg-white text-black border-gray-300"
-      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-  }`}
+                  className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 ${
+                    theme === "light"
+                      ? "bg-white text-black border-gray-300"
+                      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  }`}
                 />
               </div>
               <div>
@@ -635,12 +623,11 @@ export default function ConductionCalculator() {
                   type="number"
                   value={tCold}
                   onChange={(e) => setTCold(parseFloat(e.target.value) || 0)}
-                  className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
-  ${
-    theme === "light"
-      ? "bg-white text-black border-gray-300"
-      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-  }`}
+                  className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 ${
+                    theme === "light"
+                      ? "bg-white text-black border-gray-300"
+                      : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  }`}
                 />
               </div>
             </div>
@@ -648,14 +635,11 @@ export default function ConductionCalculator() {
         </div>
 
         {/* Layers */}
-        <div className="flex gap-6 w-full">
-          {/* Left side: Layers (50%) */}
-          <div className="w-1/2 h-[600px] overflow-y-auto backdrop-blur-sm bg-white/70 dark:bg-gray-800/80 p-6 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col md:flex-row gap-6 w-full">
+          <div className="w-full md:w-1/2 h-[600px] overflow-y-auto backdrop-blur-sm bg-white/70 dark:bg-gray-800/80 p-6 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
             <h2 className="text-3xl font-semibold mb-4 text-indigo-600 dark:text-indigo-400">
               🧱 Layers
             </h2>
-
-            {/* Map Layers */}
             <DndContext
               sensors={useSensors(useSensor(PointerSensor))}
               collisionDetection={closestCenter}
@@ -702,12 +686,11 @@ export default function ConductionCalculator() {
                           onChange={(e) =>
                             updateLayer(i, "name", e.target.value)
                           }
-                          className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
-${
-  theme === "light"
-    ? "bg-white text-black border-gray-300"
-    : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-}`}
+                          className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 ${
+                            theme === "light"
+                              ? "bg-white text-black border-gray-300"
+                              : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                          }`}
                         />
                       </div>
 
@@ -735,12 +718,11 @@ ${
                                 e.target.value
                               )
                             }
-                            className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
-${
-  theme === "light"
-    ? "bg-white text-black border-gray-300"
-    : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-}`}
+                            className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 ${
+                              theme === "light"
+                                ? "bg-white text-black border-gray-300"
+                                : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            }`}
                           />
                         </div>
 
@@ -755,12 +737,11 @@ ${
                             onChange={(e) =>
                               updateLayer(i, "k", e.target.value)
                             }
-                            className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 
-${
-  theme === "light"
-    ? "bg-white text-black border-gray-300"
-    : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-}`}
+                            className={`w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 ${
+                              theme === "light"
+                                ? "bg-white text-black border-gray-300"
+                                : "dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            }`}
                           />
                         </div>
                       </div>
@@ -771,7 +752,7 @@ ${
             </DndContext>
 
             {/* Add / Reset buttons */}
-            <div className="flex justify-center gap-4 mt-6">
+            <div className="flex flex-col md:flex-row justify-center gap-4 mt-6">
               <button
                 onClick={addLayer}
                 className="flex-1 text-lg px-5 py-3 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-lg shadow-lg hover:scale-102 transition"
@@ -788,8 +769,7 @@ ${
           </div>
 
           {/* Right side: Visualization (50%) */}
-          <div className="w-1/2 h-[600px] flex flex-col items-center justify-center backdrop-blur-sm bg-white/70 dark:bg-gray-800/80 p-6 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
-            {/* Title */}
+          <div className="w-full md:w-1/2 h-[600px] flex flex-col items-center justify-center backdrop-blur-sm bg-white/70 dark:bg-gray-800/80 p-6 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-indigo-600 dark:text-indigo-400 mb-4 text-center">
               🔍 Configuration Preview
             </h2>
@@ -806,15 +786,13 @@ ${
           </div>
         </div>
 
-        {/* Outputs */}
         <div className="mt-10">
           <div className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/80 p-6 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
-            <h2 className="text-3xl font-semibold mb-6 text-indigo-600 dark:text-indigo-400">
+            <h2 className="text-2xl sm:text-3xl font-semibold mb-6 text-center md:text-left text-indigo-600 dark:text-indigo-400">
               📊 Results
             </h2>
 
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
               {[
                 {
                   label: "Total R",
@@ -843,47 +821,46 @@ ${
               ].map((item, idx) => (
                 <div
                   key={idx}
-                  className="p-6 rounded-xl bg-indigo-100 dark:bg-gray-700 text-center shadow-lg hover:scale-[1.02] transition"
+                  className="p-4 sm:p-6 rounded-xl bg-indigo-100 dark:bg-gray-700 text-center shadow-lg hover:scale-[1.02] transition"
                 >
-                  <p className="font-semibold mb-2">{item.label}</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-sm sm:text-base font-semibold mb-2">
+                    {item.label}
+                  </p>
+                  <p className="text-lg sm:text-2xl font-bold break-words">
                     {item.value !== null ? safeValue(item.value) : "N/A"}{" "}
-                    <span className="text-lg font-normal">{item.unit}</span>
+                    <span className="text-sm sm:text-lg font-normal">
+                      {item.unit}
+                    </span>
                   </p>
                 </div>
               ))}
             </div>
 
-            {/* Individual Resistances */}
-            {/* Individual Resistances */}
             {layerResistances.length > 0 && (
-              <div className="mt-10">
-                {/* Header with toggle button */}
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-[30px] font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-transparent bg-clip-text">
+              <div className="sm:mt-10 mt-8">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                  <h3 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-transparent bg-clip-text text-center sm:text-left">
                     ⚡ Individual Resistances
                   </h3>
                   <button
                     onClick={() => setExpMode(!expMode)}
-                    className="px-4 py-2 rounded-lg text-lg font-medium bg-indigo-500 text-white hover:bg-indigo-600 transition"
+                    className="w-full sm:w-auto px-4 py-2 rounded-lg text-base sm:text-lg font-medium bg-indigo-500 text-white hover:bg-indigo-600 transition"
                   >
                     {expMode ? "Show Decimals" : "Show Exponential"}
                   </button>
                 </div>
-
-                {/* Resistances Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {layerResistances.map((item, i) => (
                     <div
                       key={i}
-                      className="p-5 rounded-xl bg-white/70 dark:bg-gray-800/70 shadow-md border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm hover:shadow-lg hover:scale-[1.02] transition"
+                      className="p-4 sm:p-5 rounded-xl bg-white/70 dark:bg-gray-800/70 shadow-md border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm hover:shadow-lg hover:scale-[1.02] transition"
                     >
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">
                         {item.label}
                       </p>
-                      <p className="text-[20px] font-semibold text-gray-900 dark:text-white">
+                      <p className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white break-words">
                         {safeValueResistance(item.r)}{" "}
-                        <span className="text-lg font-normal text-gray-500 dark:text-gray-400">
+                        <span className="text-sm sm:text-lg font-normal text-gray-500 dark:text-gray-400">
                           {units === "SI" ? `m²·K/W` : "hr·ft²·°F/Btu"}
                         </span>
                       </p>
@@ -893,26 +870,23 @@ ${
               </div>
             )}
 
-            {/* Interface Temperatures */}
             {interfaceTemps.length > 0 && (
-              <div className="mt-10">
-                <h3 className="text-[30px] font-bold mb-6 text-center bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-transparent bg-clip-text">
+              <div className="mt-8 sm:mt-10">
+                <h3 className="text-2xl sm:text-3xl font-bold mb-6 text-center bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-transparent bg-clip-text">
                   🌡️ Interface Temperatures
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {" "}
-                  {/* Added lg breakpoint */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {interfaceTemps.map((item, i) => (
                     <div
                       key={i}
-                      className="p-5 rounded-xl bg-white/70 dark:bg-gray-800/70 shadow-md border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm hover:shadow-lg hover:scale-[1.02] transition"
+                      className="p-4 sm:p-5 rounded-xl bg-white/70 dark:bg-gray-800/70 shadow-md border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm hover:shadow-lg hover:scale-[1.02] transition"
                     >
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">
                         {item.label}
                       </p>
-                      <p className="text-[20px] font-semibold text-gray-900 dark:text-white">
+                      <p className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white break-words">
                         {safeValue(item.temp)}{" "}
-                        <span className="text-lg font-normal text-gray-500 dark:text-gray-400">
+                        <span className="text-sm sm:text-lg font-normal text-gray-500 dark:text-gray-400">
                           {units === "SI"
                             ? tempUnit === "C"
                               ? "°C"
@@ -929,7 +903,6 @@ ${
         </div>
 
         <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Temperature Profile */}
           <div className="p-6 rounded-xl bg-white/70 dark:bg-gray-800/80 shadow-xl border border-gray-200 dark:border-gray-700">
             <h3 className="text-xl font-bold mb-4 text-indigo-600 dark:text-indigo-400 text-center">
               🌡️ Temperature Profile
@@ -953,7 +926,6 @@ ${
             />
           </div>
 
-          {/* Layer Resistances */}
           <div className="p-6 rounded-xl bg-white/70 dark:bg-gray-800/80 shadow-xl border border-gray-200 dark:border-gray-700">
             <h3 className="text-xl font-bold mb-4 text-indigo-600 dark:text-indigo-400 text-center">
               🧱 Layer Resistances
@@ -979,16 +951,15 @@ ${
         </div>
 
         {/* Step-by-Step Solution */}
-        <div className="mt-10">
-          <div className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/80 p-6 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
-            <h2 className="text-3xl font-semibold mb-6 text-indigo-600 dark:text-indigo-400 text-center">
+        <div className="mt-8 sm:mt-10">
+          <div className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/80 p-4 sm:p-6 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700">
+            <h2 className="text-2xl sm:text-3xl font-semibold mb-6 text-indigo-600 dark:text-indigo-400 text-center">
               📝 Step-by-Step Solution
             </h2>
 
-            <div className="space-y-6 max-h-[1000px] overflow-y-auto">
-              {/* 1️⃣ Total Thermal Resistance */}
-              <div className="p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg border-l-4 border-indigo-500">
-                <p className="font-semibold mb-2">
+            <div className="space-y-6 max-h-[100vh] overflow-y-auto pr-2 sm:pr-4">
+              <div className="p-3 sm:p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg border-l-4 border-indigo-500">
+                <p className="font-semibold mb-2 text-sm sm:text-base">
                   1️⃣ Total Thermal Resistance:
                 </p>
 
@@ -1031,8 +1002,7 @@ ${
                     />
                   </>
                 )}
-
-                <p className="mt-2 font-medium">
+                <p className="mt-2 font-medium text-sm sm:text-base">
                   Calculated:{" "}
                   <span className="text-indigo-700 dark:text-indigo-300">
                     {safeValue(totalR)}{" "}
@@ -1045,11 +1015,9 @@ ${
                       : "°F·hr/Btu"}
                   </span>
                 </p>
-
-                {/* Layer breakdown table */}
                 {layers.length > 0 && (
                   <div className="mt-4 overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-left border-collapse text-xs sm:text-sm">
                       <thead>
                         <tr className="bg-indigo-100 dark:bg-gray-600">
                           <th className="px-2 py-1 border">Layer</th>
@@ -1087,10 +1055,10 @@ ${
                   </div>
                 )}
               </div>
-
-              {/* 2️⃣ Heat Transfer Rate */}
-              <div className="p-4 bg-green-50 dark:bg-gray-700 rounded-lg border-l-4 border-green-500">
-                <p className="font-semibold mb-2">2️⃣ Heat Transfer Rate:</p>
+              <div className="p-3 sm:p-4 bg-green-50 dark:bg-gray-700 rounded-lg border-l-4 border-green-500">
+                <p className="font-semibold mb-2 text-sm sm:text-base">
+                  2️⃣ Heat Transfer Rate:
+                </p>
                 <BlockMath
                   math={
                     config === "Composite Wall"
@@ -1102,18 +1070,16 @@ ${
                         )}}{${safeValue(totalR)}}`
                   }
                 />
-                <p className="mt-2 font-medium">
+                <p className="mt-2 font-medium text-sm sm:text-base">
                   Calculated:{" "}
                   <span className="text-green-700 dark:text-green-300">
                     {safeValue(Q)} {units === "SI" ? "W" : "Btu/hr"}
                   </span>
                 </p>
               </div>
-
-              {/* 3️⃣ Critical Radius (Pipe only) */}
               {config === "Pipe" && (
-                <div className="p-4 bg-yellow-50 dark:bg-gray-700 rounded-lg border-l-4 border-yellow-500">
-                  <p className="font-semibold mb-2">
+                <div className="p-3 sm:p-4 bg-yellow-50 dark:bg-gray-700 rounded-lg border-l-4 border-yellow-500">
+                  <p className="font-semibold mb-2 text-sm sm:text-base">
                     3️⃣ Critical Radius of Insulation:
                   </p>
                   <BlockMath
@@ -1121,7 +1087,7 @@ ${
                       layers[layers.length - 1]?.k
                     )}}{${safeValue(hOutside)}}`}
                   />
-                  <p className="mt-2 font-medium">
+                  <p className="mt-2 font-medium text-sm sm:text-base">
                     Calculated:{" "}
                     <span className="text-yellow-700 dark:text-yellow-300">
                       {safeValue(criticalRadius)}{" "}
@@ -1130,27 +1096,25 @@ ${
                   </p>
                 </div>
               )}
-
-              {/* 4️⃣ Overall Heat Transfer Coefficient */}
-              <div className="p-4 bg-yellow-50 dark:bg-gray-700 rounded-lg border-l-4 border-yellow-500">
-                <p className="font-semibold mb-2">
-                  4️⃣ Overall Heat Transfer Coefficient:
+              <div className="p-3 sm:p-4 bg-yellow-50 dark:bg-gray-700 rounded-lg border-l-4 border-yellow-500">
+                <p className="font-semibold mb-2 text-sm sm:text-base">
+                  {config === "Pipe" ? "4️⃣" : "3️⃣"} Overall Heat Transfer
+                  Coefficient:
                 </p>
                 <BlockMath math={`U = \\frac{1}{R_{total} \\cdot A}`} />
-                <p className="mt-2 font-medium">
+                <p className="mt-2 font-medium text-sm sm:text-base">
                   Calculated:{" "}
                   <span className="text-yellow-700 dark:text-yellow-300">
                     {safeValue(U)} {units === "SI" ? "W/m²·K" : "Btu/hr·ft²·°F"}
                   </span>
                 </p>
               </div>
-
-              {/* 5️⃣ Interface Temperatures */}
-              <div className="p-4 bg-pink-50 dark:bg-gray-700 rounded-lg border-l-4 border-pink-500">
-                <p className="font-semibold mb-4">5️⃣ Interface Temperatures:</p>
-
+              <div className="p-3 sm:p-4 bg-pink-50 dark:bg-gray-700 rounded-lg border-l-4 border-pink-500">
+                <p className="font-semibold mb-4 text-sm sm:text-base">
+                  5️⃣ Interface Temperatures:
+                </p>
                 <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
+                  <table className="w-full border-collapse text-xs sm:text-sm">
                     <thead>
                       <tr className="bg-pink-100 dark:bg-gray-600">
                         <th className="px-2 py-1 border">Interface</th>
@@ -1193,12 +1157,9 @@ ${
         {isManualOpen && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
             <div className="relative bg-white/80 dark:bg-gray-900/80 p-8 rounded-2xl shadow-2xl max-w-7xl w-full max-h-[85vh] overflow-y-auto border border-gray-200/50 dark:border-gray-700/50">
-              {/* Gradient Header */}
               <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-transparent bg-clip-text">
                 📖 User Manual
               </h2>
-
-              {/* Scrollable Content */}
               <div className="space-y-8 text-gray-800 dark:text-gray-300 leading-relaxed">
                 <section>
                   <h3 className="text-xl font-semibold text-indigo-500 dark:text-indigo-400 mb-3">
@@ -1262,8 +1223,6 @@ ${
                   </ul>
                 </section>
               </div>
-
-              {/* Footer */}
               <div className="flex justify-end mt-8">
                 <button
                   onClick={() => setIsManualOpen(false)}
@@ -1280,13 +1239,11 @@ ${
         {isSettingsOpen && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
             <div className="relative bg-white/90 dark:bg-gray-900/90 p-8 rounded-2xl shadow-2xl max-w-7xl w-full border border-gray-200/50 dark:border-gray-700/50">
-              {/* Gradient Header */}
               <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-transparent bg-clip-text">
                 ⚙️ Settings
               </h2>
 
               <div className="space-y-6 text-gray-800 dark:text-gray-100">
-                {/* Decimal Places */}
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     Decimal Places (0-100):
@@ -1305,8 +1262,6 @@ ${
                     className="w-full p-2 rounded-lg border focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                   />
                 </div>
-
-                {/* Length Unit */}
                 {units === "SI" && (
                   <div>
                     <label className="block text-sm font-medium mb-2">
@@ -1323,8 +1278,6 @@ ${
                     </select>
                   </div>
                 )}
-
-                {/* Theme */}
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     Theme:
@@ -1339,8 +1292,6 @@ ${
                   </select>
                 </div>
               </div>
-
-              {/* Footer */}
               <div className="flex justify-end mt-8">
                 <button
                   onClick={() => setIsSettingsOpen(false)}
